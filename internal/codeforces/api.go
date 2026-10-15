@@ -1,4 +1,4 @@
-package main
+package codeforces
 
 import (
 	"encoding/json"
@@ -6,11 +6,22 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 )
 
-func loadOrFetchProblems() []Problem {
-	cacheFile := "problems.json"
+func LoadOrFetchProblems() []Problem {
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to locate user cache directory: %v\n", err)
+		os.Exit(1)
+	}
+	cacheDir = filepath.Join(cacheDir, "cfx")
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to create cache directory: %v\n", err)
+		os.Exit(1)
+	}
+	cacheFile := filepath.Join(cacheDir, "problems.json")
 	var data ProblemSetResponse
 	useCache := false
 

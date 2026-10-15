@@ -7,9 +7,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
+
+	"cfx/internal/codeforces"
+	"cfx/internal/problemid"
+	"cfx/internal/recommend"
+	problemworkspace "cfx/internal/workspace"
 )
 
 var version = "devel"
@@ -84,19 +88,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 }
 
-func parseProblemID(raw string) (string, string, error) {
-	rawProblemID := strings.ToUpper(raw)
-	re := regexp.MustCompile(`^(\d+)([A-Z]\d*)$`)
-	matches := re.FindStringSubmatch(rawProblemID)
-
-	if len(matches) != 3 {
-		return "", "", fmt.Errorf("invalid problem ID format '%s'. use format like '71A' or '4A'", raw)
-	}
-	return matches[1], matches[2], nil
-}
-
 func setupProblemCommand(workspaceDir, rawProblemID string, stdout, stderr io.Writer) int {
-	contestID, index, err := parseProblemID(rawProblemID)
+	contestID, index, err := problemid.Parse(rawProblemID)
 	if err != nil {
 		fmt.Fprintf(stderr, "error: %v\n", err)
 		return 1
@@ -104,7 +97,7 @@ func setupProblemCommand(workspaceDir, rawProblemID string, stdout, stderr io.Wr
 
 	problemURL := fmt.Sprintf("https://codeforces.com/contest/%s/problem/%s", contestID, index)
 
-	problems := loadOrFetchProblems()
+	problems := codeforces.LoadOrFetchProblems()
 	problemName := "Unknown Problem"
 	var contestIDInt int
 	fmt.Sscanf(contestID, "%d", &contestIDInt)
@@ -125,7 +118,7 @@ func setupProblemCommand(workspaceDir, rawProblemID string, stdout, stderr io.Wr
 	}
 
 	fmt.Println(stdout, "scraping sample test cases...")
-	samples, err := scrapeSampleCases(problemURL)
+	samples, err := codeforces.ScrapeSampleCases(problemURL)
 	if err != nil {
 		fmt.Fprintf(stderr, "warning: failed to scrape sample test cases: %v\n", err)
 	} else {
@@ -146,10 +139,8 @@ func setupProblemCommand(workspaceDir, rawProblemID string, stdout, stderr io.Wr
 using namespace std;
 
 /*
-- Problem: 
-%s [%s%s]
-- URL: 
-%s
+- Problem: %s [%s%s]
+- URL: %s
  */
 
 int main() {
@@ -176,12 +167,12 @@ int main() {
 }
 
 func runTestsCommand(workspaceFlag, problemID string, stdout, stderr io.Writer) int {
-	runTests(workspaceFlag, problemID)
+	problemworkspace.RunTests(workspaceFlag, problemID)
 	return 0
 }
 
 func recommendProblemsCommand(handle, tag string, stdout, stderr io.Writer) int {
-	recommendProblems(handle, tag)
+	recommend.RecommendProblems(handle, tag)
 	return 0
 }
 

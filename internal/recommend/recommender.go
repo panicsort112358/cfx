@@ -1,4 +1,4 @@
-package main
+package recommend
 
 import (
 	"encoding/json"
@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"cfx/internal/codeforces"
 )
 
 type UserInfoResponse struct {
@@ -27,7 +29,7 @@ type SubmissionResponse struct {
 	} `json:"result"`
 }
 
-func recommendProblems(handle string, tagFilter string) {
+func RecommendProblems(handle string, tagFilter string) {
 	fmt.Printf("fetching user info for %s...\n", handle)
 
 	// 1. Fetch user rating from Codeforces API
@@ -74,7 +76,7 @@ func recommendProblems(handle string, tagFilter string) {
 	}
 
 	// 3. Load problems from cache/API
-	problems := loadOrFetchProblems()
+	problems := codeforces.LoadOrFetchProblems()
 
 	// Codeforces minimum problem rating is 800
 	targetMin := userRating

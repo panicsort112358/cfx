@@ -1,4 +1,4 @@
-package main
+package codeforces
 
 type Problem struct {
 	ContestID int      `json:"contestId"`

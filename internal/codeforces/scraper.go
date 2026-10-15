@@ -1,4 +1,4 @@
-package main
+package codeforces
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-func scrapeSampleCases(url string) ([]SampleCase, error) {
+func ScrapeSampleCases(url string) ([]SampleCase, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
