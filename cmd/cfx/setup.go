@@ -14,7 +14,7 @@ import (
 	"cfx/internal/problem"
 )
 
-func setupProblemCommand(workspaceDir, rawID string, stdout, stderr io.Writer) int {
+func setupProblemCommand(workspaceDir, rawID string, openPage bool, stdout, stderr io.Writer) int {
 	contestID, index, err := problem.ParseID(rawID)
 	if err != nil {
 		fmt.Fprintf(stderr, "error: %v\n", err)
@@ -24,6 +24,7 @@ func setupProblemCommand(workspaceDir, rawID string, stdout, stderr io.Writer) i
 	problemURL := fmt.Sprintf("https://codeforces.com/contest/%s/problem/%s", contestID, index)
 	problemName := findProblemName(contestID, index, codeforces.LoadOrFetchProblems())
 	fmt.Fprintf(stdout, "setting up workspace for [%s%s] %s\n", contestID, index, problemName)
+	fmt.Fprintf(stdout, "problem page: %s\n", problemURL)
 
 	problemDir := filepath.Join(workspaceDir, contestID, index)
 	if err := os.MkdirAll(problemDir, 0755); err != nil {
@@ -31,10 +32,15 @@ func setupProblemCommand(workspaceDir, rawID string, stdout, stderr io.Writer) i
 		return 1
 	}
 
+	if hasSampleFiles(problemDir) {
+		fmt.Fprintln(stdout, "existing sample files may be overwritten by refreshed samples; solution.cpp will be kept.")
+	}
 	fmt.Fprintln(stdout, "scraping sample test cases...")
 	samples, err := codeforces.ScrapeSampleCases(problemURL)
 	if err != nil {
 		fmt.Fprintf(stderr, "warning: failed to scrape sample test cases: %v\n", err)
+	} else if len(samples) == 0 {
+		fmt.Fprintln(stdout, "no sample cases found; existing sample files were left unchanged.")
 	} else {
 		fmt.Fprintf(stdout, "found %d sample test case(s).\n", len(samples))
 		for i, sample := range samples {
@@ -66,11 +72,23 @@ func setupProblemCommand(workspaceDir, rawID string, stdout, stderr io.Writer) i
 		fmt.Fprintf(stdout, "solution file already exists at: %s\n", solutionPath)
 	}
 
-	fmt.Fprintln(stdout, "opening problem URL in browser...")
-	if err := openBrowser(problemURL); err != nil {
-		fmt.Fprintf(stderr, "warning: could not open browser: %v\n", err)
+	if openPage {
+		fmt.Fprintln(stdout, "opening problem page in browser...")
+		if err := openBrowser(problemURL); err != nil {
+			fmt.Fprintf(stderr, "warning: could not open browser: %v\n", err)
+		}
 	}
 	return 0
+}
+
+func hasSampleFiles(problemDir string) bool {
+	for _, pattern := range []string{"in*.txt", "out*.txt"} {
+		matches, _ := filepath.Glob(filepath.Join(problemDir, pattern))
+		if len(matches) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func findProblemName(contestID, index string, problems []codeforces.Problem) string {

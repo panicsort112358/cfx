@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,6 +28,28 @@ func RunTests(workspaceDir, rawID string) {
 		os.Exit(1)
 	}
 
+	matches, err := filepath.Glob(filepath.Join(problemDir, "in*.txt"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error finding test cases: %v\n", err)
+		os.Exit(1)
+	}
+
+	var testNumbers []int
+	for _, path := range matches {
+		name := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "in"), ".txt")
+		number, err := strconv.Atoi(name)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "warning: ignoring unexpected test input file %s\n", path)
+			continue
+		}
+		testNumbers = append(testNumbers, number)
+	}
+	sort.Ints(testNumbers)
+	if len(testNumbers) == 0 {
+		fmt.Fprintln(os.Stderr, "error: no test cases found; run setup to fetch samples or add inN.txt/outN.txt files.")
+		os.Exit(1)
+	}
+
 	binPath := filepath.Join(problemDir, "solution")
 	if _, err := os.Stat(binPath); err == nil {
 		_ = os.Remove(binPath)
@@ -40,16 +64,10 @@ func RunTests(workspaceDir, rawID string) {
 		os.Exit(1)
 	}
 
-	matches, err := filepath.Glob(filepath.Join(problemDir, "in*.txt"))
-	if err != nil || len(matches) == 0 {
-		fmt.Println("no test cases found in workspace.")
-		return
-	}
-
-	fmt.Printf("running %d test case(s)...\n\n", len(matches))
+	fmt.Printf("running %d test case(s)...\n\n", len(testNumbers))
 
 	passedCount := 0
-	for i := 1; i <= len(matches); i++ {
+	for _, i := range testNumbers {
 		inFile := filepath.Join(problemDir, fmt.Sprintf("in%d.txt", i))
 		outFile := filepath.Join(problemDir, fmt.Sprintf("out%d.txt", i))
 
@@ -98,16 +116,71 @@ func RunTests(workspaceDir, rawID string) {
 			fmt.Printf("test %d ... FAILED [%.2fms]\n", i, float64(duration.Microseconds())/1000.0)
 			fmt.Println("--- input ---")
 			fmt.Println(strings.TrimSpace(string(inputBytes)))
-			fmt.Println("--- expected ---")
-			fmt.Println(expectedOutput)
-			fmt.Println("--- got ---")
-			fmt.Println(actualOutput)
-			fmt.Println("--------------")
+			printOutputDiff(expectedOutput, actualOutput)
 		}
 	}
 
-	fmt.Printf("\nresult: %d/%d tests passed.\n", passedCount, len(matches))
-	if passedCount < len(matches) {
+	fmt.Printf("\nresult: %d/%d tests passed.\n", passedCount, len(testNumbers))
+	if passedCount < len(testNumbers) {
 		os.Exit(1)
 	}
+}
+
+func printOutputDiff(expected, actual string) {
+	expectedLines := outputLines(expected)
+	actualLines := outputLines(actual)
+	fmt.Println("--- expected")
+	fmt.Println("+++ actual")
+
+	if len(expectedLines) > 100_000/max(1, len(actualLines)) {
+		limit := max(len(expectedLines), len(actualLines))
+		for i := 0; i < limit; i++ {
+			if i < len(expectedLines) && i < len(actualLines) && expectedLines[i] == actualLines[i] {
+				continue
+			}
+			if i < len(expectedLines) {
+				fmt.Printf("-%s\n", expectedLines[i])
+			}
+			if i < len(actualLines) {
+				fmt.Printf("+%s\n", actualLines[i])
+			}
+		}
+		return
+	}
+
+	lcs := make([][]int, len(expectedLines)+1)
+	for i := range lcs {
+		lcs[i] = make([]int, len(actualLines)+1)
+	}
+	for i := len(expectedLines) - 1; i >= 0; i-- {
+		for j := len(actualLines) - 1; j >= 0; j-- {
+			if expectedLines[i] == actualLines[j] {
+				lcs[i][j] = lcs[i+1][j+1] + 1
+			} else {
+				lcs[i][j] = max(lcs[i+1][j], lcs[i][j+1])
+			}
+		}
+	}
+
+	for i, j := 0, 0; i < len(expectedLines) || j < len(actualLines); {
+		switch {
+		case i < len(expectedLines) && j < len(actualLines) && expectedLines[i] == actualLines[j]:
+			fmt.Printf(" %s\n", expectedLines[i])
+			i++
+			j++
+		case i < len(expectedLines) && (j == len(actualLines) || lcs[i+1][j] >= lcs[i][j+1]):
+			fmt.Printf("-%s\n", expectedLines[i])
+			i++
+		default:
+			fmt.Printf("+%s\n", actualLines[j])
+			j++
+		}
+	}
+}
+
+func outputLines(output string) []string {
+	if output == "" {
+		return nil
+	}
+	return strings.Split(output, "\n")
 }

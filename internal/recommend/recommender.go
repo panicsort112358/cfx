@@ -111,6 +111,7 @@ func RecommendProblems(handle string, tagFilter string) {
 			}
 
 			fmt.Printf("[%d%s] %s (rating: %d) [%s]\n", p.ContestID, p.Index, p.Name, p.Rating, strings.Join(p.Tags, ", "))
+			fmt.Printf("  https://codeforces.com/contest/%d/problem/%s\n", p.ContestID, p.Index)
 			count++
 			if count >= 10 {
 				break
