@@ -15,33 +15,48 @@ var version = "devel"
 const usage = `usage: cfx [options] COMMAND [ARG ...]
 
 commands:
-  setup <ID>                 create a problem workspace (also: cfx <ID>)
-  test <ID>                  build and run the problem's sample tests
-  recommend <HANDLE>         recommend problems for a Codeforces user
-  help [COMMAND]             show general or command-specific help
-  version                    print the program version
+  setup <ID>                    create a problem workspace
+  test <ID>                     build and run sample tests
+  recommend <HANDLE> [options]  recommend problems for a Codeforces user
+  help [COMMAND]                show general or command-specific help
+  version                       print the program version
 
 options:
-  -dir, --dir <PATH>         workspace directory (default "workspace")
-                             place it before or after the command
+  -dir, --dir <PATH>            workspace directory (default "workspace")
+                                may appear before or after the command
 
 setup options:
-  --no-open                  do not open the problem page in a browser
+  --no-open                     do not open the problem page in a browser
 
 recommend options:
-  --tag <TAG>                limit recommendations to a tag
+  --tag <TAG>                   limit recommendations to a Codeforces tag
 
-Examples:
+examples:
   cfx setup 71A
+  cfx 71A --no-open
   cfx test 71A
   cfx recommend tourist --tag dp
-  cfx test 71A --dir ~/codeforces
+  cfx --dir ~/codeforces test 71A
 `
 
 const (
-	setupUsage     = "usage: cfx setup <ID> [--no-open]\n       cfx <ID> [--no-open]\n"
-	testUsage      = "usage: cfx test <ID>\n"
-	recommendUsage = "usage: cfx recommend <HANDLE> [--tag <TAG>]\n"
+	setupUsage = `usage: cfx setup <ID> [--no-open]
+       cfx <ID> [--no-open]
+
+Creates a workspace, saves available sample tests, and creates solution.cpp
+if it does not exist. Re-running setup may replace sample files; solution.cpp
+is kept. The problem page opens in a browser unless --no-open is used.
+`
+	testUsage = `usage: cfx test <ID>
+
+Compiles solution.cpp with g++ and runs the saved sample tests. Failed tests
+show an expected-versus-actual diff. Missing sample tests are an error.
+`
+	recommendUsage = `usage: cfx recommend <HANDLE> [--tag <TAG>]
+
+Recommends up to ten unsolved problems near the user's rating. Use --tag to
+filter by a Codeforces tag. The older positional tag form is also accepted.
+`
 )
 
 func main() {

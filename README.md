@@ -1,29 +1,49 @@
 # cfx
 
-A command-line helper for Codeforces problems. The CLI lives in `cmd/cfx`,
-with Codeforces API and scraping code, recommendation logic, problem reference parsing,
-and workspace test running separated under `internal/`.
-
-Use `cfx setup 71A` to create a workspace, `cfx test 71A` to run its sample
-tests, or `cfx recommend tourist --tag dp` to find problems by rating and tag.
-The setup shorthand `cfx 71A` remains available. Set the workspace directory
-with `--dir PATH` anywhere in the command, and use `--no-open` to skip opening
-the problem page during setup.
+A command-line helper for Codeforces problems. It creates local workspaces,
+downloads sample tests, runs C++ solutions, and recommends problems for a user.
 
 ## Build
 
-From the repository root, run:
+From the repository root:
 
 ```sh
-go build ./cmd/cfx
+go build -o cfx ./cmd/cfx
 ```
 
-This creates a `cfx` executable in the current directory. Run it with, for example:
+## Usage
 
 ```sh
-./cfx help
+cfx setup 71A
+cfx test 71A
+cfx recommend tourist --tag dp
 ```
 
-By default, generated problem workspaces are stored under `workspace/` in the
-current directory. The Codeforces problem cache is stored in the operating
-system's user cache directory under `cfx/problems.json`.
+`cfx 71A` is a shorthand for `cfx setup 71A`. Setup creates a workspace under
+`workspace/<contest>/<index>`, saves available samples, creates `solution.cpp`
+if needed, and opens the problem page. Pass `--no-open` to skip opening the
+browser. Repeating setup may replace sample files; an existing `solution.cpp`
+is kept.
+
+Use `test` to compile `solution.cpp` with `g++` and run the saved sample cases.
+Failed tests show an expected-versus-actual diff. A workspace without sample
+tests is reported as an error.
+
+`recommend` suggests up to ten unsolved problems around the user's rating.
+Use `--tag` to filter by a Codeforces tag. Recommendations include problem
+links.
+
+## Options and help
+
+Use `-dir` or `--dir` to choose a workspace directory. The option can appear
+before or after the command:
+
+```sh
+cfx --dir ~/codeforces setup 71A --no-open
+cfx test 71A --dir ~/codeforces
+```
+
+Run `cfx help` for the command list or `cfx help setup`, `cfx help test`, or
+`cfx help recommend` for command-specific usage. The Codeforces problem cache
+is stored under `cfx/problems.json` in the operating system's user cache
+directory.
