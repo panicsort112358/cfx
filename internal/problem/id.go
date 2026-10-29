@@ -1,4 +1,4 @@
-package problemid
+package problem
 
 import (
 	"fmt"
@@ -6,10 +6,10 @@ import (
 	"strings"
 )
 
-var format = regexp.MustCompile(`^(\d+)([A-Z]\d*)$`)
+var idFormat = regexp.MustCompile(`^(\d+)([A-Z]\d*)$`)
 
-func Parse(raw string) (string, string, error) {
-	matches := format.FindStringSubmatch(strings.ToUpper(raw))
+func ParseID(raw string) (string, string, error) {
+	matches := idFormat.FindStringSubmatch(strings.ToUpper(raw))
 	if len(matches) != 3 {
 		return "", "", fmt.Errorf("invalid problem ID format '%s'. use format like '71A' or '4A'", raw)
 	}

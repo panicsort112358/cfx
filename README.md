@@ -1,7 +1,7 @@
 # cfx
 
 A command-line helper for Codeforces problems. The CLI lives in `cmd/cfx`,
-with Codeforces API and scraping code, recommendation logic, problem ID parsing,
+with Codeforces API and scraping code, recommendation logic, problem reference parsing,
 and workspace test running separated under `internal/`.
 
 ## Build
