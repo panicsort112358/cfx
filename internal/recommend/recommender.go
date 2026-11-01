@@ -29,7 +29,7 @@ type SubmissionResponse struct {
 	} `json:"result"`
 }
 
-func RecommendProblems(handle string, tagFilter string) {
+func RecommendProblems(handle string) {
 	fmt.Printf("fetching user info for %s...\n", handle)
 
 	// 1. Fetch user rating from Codeforces API
@@ -96,20 +96,6 @@ func RecommendProblems(handle string, tagFilter string) {
 				continue
 			}
 
-			// Optional tag filtering
-			if tagFilter != "" {
-				matchTag := false
-				for _, t := range p.Tags {
-					if strings.EqualFold(t, tagFilter) {
-						matchTag = true
-						break
-					}
-				}
-				if !matchTag {
-					continue
-				}
-			}
-
 			fmt.Printf("[%d%s] %s (rating: %d) [%s]\n", p.ContestID, p.Index, p.Name, p.Rating, strings.Join(p.Tags, ", "))
 			fmt.Printf("  https://codeforces.com/contest/%d/problem/%s\n", p.ContestID, p.Index)
 			count++
@@ -120,6 +106,6 @@ func RecommendProblems(handle string, tagFilter string) {
 	}
 
 	if count == 0 {
-		fmt.Println("no recommendations found matching criteria.")
+		fmt.Println("no recommendations found.")
 	}
 }

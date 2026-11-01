@@ -14,7 +14,7 @@ import (
 	"cfx/internal/problem"
 )
 
-func setupProblemCommand(workspaceDir, rawID string, openPage bool, stdout, stderr io.Writer) int {
+func setupProblemCommand(workspaceDir, rawID string, stdout, stderr io.Writer) int {
 	contestID, index, err := problem.ParseID(rawID)
 	if err != nil {
 		fmt.Fprintf(stderr, "error: %v\n", err)
@@ -72,11 +72,9 @@ func setupProblemCommand(workspaceDir, rawID string, openPage bool, stdout, stde
 		fmt.Fprintf(stdout, "solution file already exists at: %s\n", solutionPath)
 	}
 
-	if openPage {
-		fmt.Fprintln(stdout, "opening problem page in browser...")
-		if err := openBrowser(problemURL); err != nil {
-			fmt.Fprintf(stderr, "warning: could not open browser: %v\n", err)
-		}
+	fmt.Fprintln(stdout, "opening problem page in browser...")
+	if err := openBrowser(problemURL); err != nil {
+		fmt.Fprintf(stderr, "warning: could not open browser: %v\n", err)
 	}
 	return 0
 }
@@ -104,18 +102,20 @@ func findProblemName(contestID, index string, problems []codeforces.Problem) str
 func solutionTemplate(name, contestID, index, url string) string {
 	return fmt.Sprintf(`#include <iostream>
 
-using namespace std;
-
 /*
 - Problem: %s [%s%s]
 - URL: %s
  */
 
-int main() {
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
-
+void solve() {
     // Write your solution here
+}
+
+int main() {
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+
+    solve();
 
     return 0;
 }
